@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nueva Factura</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/form_factura.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/loading_animation.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/success_toast.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1>Registro de Factura (OCR + Datos)</h1>
+        
+        <form action="{{ url_for('nueva_factura') }}" method="POST" enctype="multipart/form-data" id="facturaForm">
+            <!-- Contenedor de pestañas -->
+            <div class="tabs">
+                <div class="tab-buttons">
+                    <button type="button" class="tab-button active" data-tab="main">Datos Principales</button>
+                    <button type="button" class="tab-button" data-tab="accounts">Detalle Cuentas</button>
+                </div>
+
+                <!-- Pestaña 1: Datos Principales -->
+                <div class="tab-content active" id="main">
+                    <!-- Vista previa para OCR -->
+                    <div class="image-preview-container" id="ocrPreviewContainer">
+                        <img id="ocrImagePreview" class="image-preview" 
+                             src="{% if form_saved_file_ocr %}{{ url_for('static', filename='uploads/' + form_saved_file_ocr) }}{% else %}#{% endif %}" 
+                             style="{% if not form_saved_file_ocr %}display: none;{% endif %}">
+                        <div class="image-preview-placeholder" id="ocrPlaceholder" 
+                             style="{% if form_saved_file_ocr %}display: none;{% endif %}">
+                            <span>Vista previa de la imagen (OCR)</span>
+                        </div>
+                        <div id="ocrLoadingSpinner" class="loading-spinner" style="display: none;">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Foto Voucher (OCR) -->
+                    <div class="form-group">
+                        <label for="foto_voucher_ocr">Foto Voucher (OCR)</label>
+                        <div style="margin-bottom: 15px; display: flex; gap: 10px;">
+                            <button type="button" class="custom-button take-photo" onclick="document.getElementById('fileCameraOcr').click()">
+                                Tomar foto
+                            </button>
+                            <button type="button" class="custom-button select-gallery" onclick="document.getElementById('fileGalleryOcr').click()">
+                                Seleccionar de galería
+                            </button>
+                        </div>
+                        <input 
+                            type="file"
+                            id="fileCameraOcr"
+                            name="foto_voucher_camera_ocr"
+                            accept="image/jpeg,image/png"
+                            capture="camera"
+                            style="display: none;"
+                        >
+                        <input 
+                            type="file"
+                            id="fileGalleryOcr"
+                            name="foto_voucher_gallery_ocr"
+                            accept="image/jpeg,image/png"
+                            style="display: none;"
+                        >
+                    </div>
+
+                    <!-- Campo oculto para conservar el nombre del archivo OCR -->
+                    <input type="hidden" name="saved_file_ocr" value="{{ form_saved_file_ocr }}">
+
+                    <!-- Botón para cargar datos (OCR) -->
+                    <div class="button-group">
+                        <button 
+                            type="submit"
+                            name="action"
+                            value="cargar"
+                            class="custom-button load-data"
+                        >
+                            Cargar datos
+                        </button>
+                    </div>
+
+                    <!-- Cliente -->
+                    <div class="form-group" style="position: relative; display: none;">
+                        <label for="cliente_name">Cliente</label>
+                        <input
+                            type="text"
+                            id="cliente_name"
+                            name="cliente_name"
+                            placeholder="Escriba el nombre del cliente"
+                            autocomplete="off"
+                        >
+                        <input
+                            type="hidden"
+                            id="cliente_id"
+                            name="cliente_id"
+                            value="{{ form_cliente_id }}"
+                        >
+                        <div id="cliente_suggestions" class="autocomplete-suggestions"></div>
+                        <div id="cliente_error" class="error-message" style="display: none; color: red;"></div>
+                    </div>
+
+                    <!-- Tarjeta Titular -->
+<div class="form-group" style="position: relative;">
+    <label for="tarjeta_name">Tarjeta de Crédito Titular <span style="color:red;">*</span></label>
+    <input
+        type="text"
+        id="tarjeta_name"
+        name="tarjeta_name"
+        placeholder="Escriba el nombre de la tarjeta titular"
+        autocomplete="off"
+        class="required"
+    >
+    <input
+        type="hidden"
+        id="tarjeta_id"
+        name="tarjeta_id"
+        value="{{ form_tarjeta_id }}"
+        class="required"
+    >
+    <div id="tarjeta_suggestions" class="autocomplete-suggestions"></div>
+    <div id="tarjeta_name_error" class="error-message" style="display: none; color: red;"></div>
+</div>
+
+<!-- Tarjeta Adicional -->
+<div class="form-group" style="position: relative;">
+    <label for="tarjeta_adicional_name">Tarjeta de Crédito Adicional</label>
+    <input
+        type="text"
+        id="tarjeta_adicional_name"
+        name="tarjeta_adicional_name"
+        placeholder="Escriba el nombre de la tarjeta adicional"
+        autocomplete="off"
+    >
+    <input
+        type="hidden"
+        id="tarjeta_adicional"
+        name="tarjeta_adicional"
+        value="{{ form_tarjeta_adicional }}"
+    >
+    <div id="tarjeta_adicional_suggestions" class="autocomplete-suggestions"></div>
+    <div id="tarjeta_adicional_error" class="error-message" style="display: none; color: red;"></div>
+</div>
+
+
+                    <!-- Medio de compra -->
+                    <div class="form-group" style="position: relative;">
+                        <label for="medio_compra_name">Medio de compra <span style="color:red;">*</span></label>
+                        <input
+                            type="text"
+                            id="medio_compra_name"
+                            name="medio_compra_name"
+                            placeholder="Escriba el medio de compra"
+                            autocomplete="off"
+                            class="required"
+                        >
+                        <input
+                            type="hidden"
+                            id="medio_compra"
+                            name="medio_compra"
+                            value="{{ form_medio_compra }}"
+                            class="required"
+                        >
+                        <div id="medio_compra_suggestions" class="autocomplete-suggestions"></div>
+                        <div id="medio_compra_name_error" class="error-message" style="display: none; color: red;"></div>
+                    </div>
+
+                    <!-- País -->
+<div class="form-group" style="position: relative;">
+    <label for="pais_name">País <span style="color:red;">*</span></label>
+    <input
+        type="text"
+        id="pais_name"
+        name="pais_name"
+        value="{{ form_pais_nombre }}"
+        placeholder="Escriba el nombre del país"
+        autocomplete="off"
+        class="required"
+    >
+    <input
+        type="hidden"
+        id="pais"
+        name="pais"
+        value="{{ form_pais }}"
+        class="required"
+    >
+    <div id="pais_suggestions" class="autocomplete-suggestions"></div>
+    <div id="pais_name_error" class="error-message" style="display: none; color: red;"></div>
+</div>
+
+<!-- Ciudad -->
+<div class="form-group" style="position: relative;">
+    <label for="ciudad_name">Ciudad <span style="color:red;">*</span></label>
+    <input
+        type="text"
+        id="ciudad_name"
+        name="ciudad_name"
+        value="{{ form_ciudad_nombre }}"
+        placeholder="Escriba el nombre de la ciudad"
+        autocomplete="off"
+        class="required"
+    >
+    <input
+        type="hidden"
+        id="ciudad"
+        name="ciudad"
+        value="{{ form_ciudad }}"
+        class="required"
+    >
+    <div id="ciudad_suggestions" class="autocomplete-suggestions"></div>
+    <div id="ciudad_name_error" class="error-message" style="display: none; color: red;"></div>
+</div>
+
+<!-- Moneda -->
+<div class="form-group" style="position: relative;">
+    <label for="moneda_name">Moneda <span style="color:red;">*</span></label>
+    <input
+        type="text"
+        id="moneda_name"
+        name="moneda_name"
+        value="{{ form_moneda_nombre }}"
+        placeholder="Escriba el nombre de la moneda"
+        autocomplete="off"
+        class="required"
+    >
+    <input
+        type="hidden"
+        id="moneda"
+        name="moneda"
+        value="{{ form_moneda }}"
+        class="required"
+    >
+    <div id="moneda_suggestions" class="autocomplete-suggestions"></div>
+    <div id="moneda_name_error" class="error-message" style="display: none; color: red;"></div>
+</div>
+
+                    <!-- Proveedor -->
+                    <div class="form-group" style="position: relative;">
+                        <label for="proveedor_name">Proveedor <span style="color:red;">*</span></label>
+                        <input
+                            type="text"
+                            id="proveedor_name"
+                            name="proveedor_name"
+                            placeholder="Escriba el nombre del proveedor"
+                            autocomplete="off"
+                            class="required"
+                        >
+                        <input
+                            type="hidden"
+                            id="proveedor_id"
+                            name="proveedor_id"
+                            value="{{ form_proveedor_id }}"
+                            class="required"
+                        >
+                        <div id="proveedor_suggestions" class="autocomplete-suggestions"></div>
+                        <div id="proveedor_name_error" class="error-message" style="display: none; color: red;"></div>
+                    </div>
+
+                    <!-- Fecha y Hora -->
+                    <div class="form-group">
+                        <label for="fecha_hora">Fecha y Hora <span style="color:red;">*</span></label>
+                        <div class="datetime-container">
+                            <input 
+                                type="datetime-local"
+                                id="fecha_hora"
+                                name="fecha_hora"
+                                value="{{ form_fecha_hora }}"
+                                class="required"
+                            >
+                            <button type="button" id="setNowButton" class="custom-button now-button">Ahora</button>
+                        </div>
+                        <div id="fecha_hora_error" class="error-message" style="display: none; color: red;"></div>
+                    </div>
+
+                    <!-- Monto de la compra -->
+                    <div class="form-group">
+                        <label for="monto">Monto de la compra <span style="color:red;">*</span></label>
+                        <input
+                            type="number"
+                            step="0.01"
+                            id="monto"
+                            name="monto"
+                            placeholder="Ej: 100.00"
+                            value="{{ form_monto }}"
+                            class="required"
+                        >
+                        <div id="monto_error" class="error-message" style="display: none; color: red;"></div>
+                    </div>
+
+                    <!-- Comentarios -->
+                    <div class="form-group">
+                        <label for="comentarios">Comentarios</label>
+                        <textarea
+                            id="comentarios"
+                            name="comentarios"
+                            rows="3"
+                            placeholder="Ingrese comentarios..."
+                        >{{ form_comentarios }}</textarea>
+                    </div>
+
+                    <!-- Foto Voucher -->
+                    <div class="form-group">
+                        <label for="foto_voucher">Foto del Voucher <span style="color:red;">*</span></label>
+                        <div class="image-preview-container" id="voucherPreviewContainer">
+                            {% if form_saved_file_voucher %}
+                            <img src="{{ url_for('static', filename='uploads/' + form_saved_file_voucher) }}"
+                                 id="voucherImagePreview"
+                                 class="image-preview">
+                            {% else %}
+                            <div id="voucherImagePreview" class="image-preview-placeholder">
+                                <span>Vista previa de la imagen (Voucher)</span>
+                            </div>
+                            {% endif %}
+                            <div id="voucherLoadingSpinner" class="loading-spinner" style="display: none;">
+                                <div class="spinner"></div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 10px; display: flex; gap: 10px;">
+                            <button type="button" id="btnCameraVoucher" class="custom-button take-photo">
+                                Tomar foto
+                            </button>
+                            <button type="button" id="btnGalleryVoucher" class="custom-button select-gallery">
+                                Seleccionar de galería
+                            </button>
+                        </div>
+                        <input type="file" id="fileCameraVoucher" name="voucher_file" accept="image/jpeg,image/png" capture="camera" style="display: none;" class="required">
+                        <input type="file" id="fileGalleryVoucher" name="voucher_file" accept="image/jpeg,image/png" style="display: none;">
+                        <div id="fileCameraVoucher_error" class="error-message" style="display: none; color: red;"></div>
+                    </div>
+
+                    <!-- Campo oculto para conservar el nombre del archivo del voucher -->
+                    <input type="hidden" name="saved_file_voucher" value="{{ form_saved_file_voucher }}">
+                </div>
+
+<!-- Pestaña 2: Detalle Cuentas -->
+<div class="tab-content" id="accounts">
+    <h2>Detalle Cuentas</h2>
+    
+    <!-- Formulario para capturar cuenta -->
+    <div id="detalleCuentaForm" style="display: block;">
+        <div class="form-group" style="position: relative;">
+            <label for="cuenta">Cuenta <span style="color:red;"></span></label>
+            <input type="text" id="cuenta" name="cuenta_name" placeholder="Escriba la cuenta" autocomplete="off">
+            <input type="hidden" id="cuenta_id" name="cuenta">
+            <div id="cuenta_suggestions" class="autocomplete-suggestions"></div>
+            <div id="cuenta_error" class="error-message" style="display: none; color: red;"></div>
+        </div>
+        <div class="form-group" style="position: relative;">
+            <label for="centro_costo">Centro de Costo <span style="color:red;"></span></label>
+            <input type="text" id="centro_costo" name="centro_costo_name" placeholder="Escriba el centro de costo" autocomplete="off">
+            <input type="hidden" id="centro_costo_id" name="centro_costo">
+            <div id="centro_costo_suggestions" class="autocomplete-suggestions"></div>
+            <div id="centro_costo_error" class="error-message" style="display: none; color: red;"></div>
+        </div>
+        <div class="form-group">
+            <label for="total">Total <span style="color:red;"></span></label>
+            <input type="number" step="0.01" id="total" name="monto" placeholder="Ej: 50.00" class="total-distribution-input">
+            <div id="total_error" class="error-message" style="display: none; color: red;"></div>
+        </div>
+        <div class="form-group">
+            <label for="comentarios_cuenta">Comentarios</label>
+            <textarea id="comentarios_cuenta" name="comentarios" rows="2" placeholder="Comentarios (opcional)"></textarea>
+        </div>
+        <div id="actionButtons">
+            <button type="button" id="btnAgregarCuenta" class="custom-button" disabled>Agregar Cuenta</button>
+        </div>
+        <div id="editButtons" style="display: none;">
+            <button type="button" id="btnDiscard" class="custom-button" style="background: linear-gradient(135deg, #dc3545, #c82333); margin-bottom: 10px;">Descartar</button>
+            <button type="button" id="btnConfirmEdit" class="custom-button" disabled>Confirmar</button>
+        </div>
+
+        <!-- Tabla para mostrar las cuentas agregadas -->
+        <div class="table-container">
+            <table id="cuentasTable" class="small-table" style="display:none;">
+                <thead>
+                    <tr>
+                        <th>ID_Cuenta</th>
+                        <th>Cuenta</th>
+                        <th>Centro de Costo</th>
+                        <th>Total</th>
+                        <th>Comentarios</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- Totales -->
+        <div class="form-group totals-section">
+            <label for="total_distribucion_cuentas">Total Distribución Cuentas</label>
+            <input type="number" step="0.01" id="total_distribucion_cuentas" name="total_distribucion_cuentas" readonly value="0.00">
+        </div>
+        <div class="form-group totals-section">
+            <label for="falta_por_distribuir">Falta por Distribuir</label>
+            <input type="number" step="0.01" id="falta_por_distribuir" name="falta_por_distribuir" readonly value="{{ form_monto if form_monto else '0.00' }}">
+        </div>
+
+        <!-- Botón para enviar toda la factura -->
+        <button type="submit" name="action" value="enviar" class="btn-submit">Enviar</button>
+    </div>
+</div>
+
+<input type="hidden" id="accounts_data" name="accounts_data" value="">
+                <!-- Campo oculto para unique_key -->
+                <input type="hidden" id="unique_key" name="unique_key" value="{{ unique_key }}">
+            </div>
+        </form>
+
+        <!-- Modal para confirmar eliminación -->
+        <div id="deleteModal" class="modal">
+            <div class="modal-content">
+                <h2>Confirmar Eliminación</h2>
+                <p>¿Estás seguro de que quieres eliminar esta cuenta?</p>
+                <div class="modal-button-group">
+                    <button type="button" id="btnCancelDelete" class="btn-cancel">No</button>
+                    <button type="button" id="btnConfirmDelete" class="btn-confirm">Sí</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para vista previa de la imagen -->
+        <div id="imagePreviewModal" class="modal image-preview-modal">
+            <div class="modal-content image-preview-content">
+                <span id="closeImagePreview" class="close-button">×</span>
+                <img id="fullImagePreview" class="full-image" src="" alt="Vista previa del voucher">
+            </div>
+        </div>
+
+        <!-- Contenedor de la animación de carga -->
+        <div class="loading-container" id="loadingAnimation">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+
+        <!-- Contenedor del toast de éxito -->
+        <div class="success-toast-container" id="successToast">
+            <div class="succsess-alert">
+                <div class="flex gap-2">
+                    <div class="icon-container">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"></path>
+                        </svg>
+                    </div>
+                    <div class="text-container">
+                        <p>Éxito</p>
+                        <p>Operación realizada con éxito</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <script src="{{ url_for('static', filename='js/nueva_factura.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/forma.js') }}" defer></script>
+</body>
+</html>
+
