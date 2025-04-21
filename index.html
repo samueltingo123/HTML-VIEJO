@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sistema de Gestión</title>
+    <link rel="stylesheet" href="static/css/index.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Notificación de éxito -->
+    <div id="successNotification" class="success-notification" style="display: none;">
+        <i class="fas fa-check-circle"></i> Usuario añadido con éxito
+    </div>
+
+    <div class="app-container">
+        <!-- Overlay para cuando el sidebar está abierto en móvil -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        
+        <!-- Sidebar para navegación -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-chart-line"></i>
+                    <span>AliGestor</span>
+                </div>
+                <button id="sidebar-toggle" class="sidebar-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            
+            <div class="sidebar-user">
+                <div class="avatar">
+                    <span>{{ session['nombre_usuario'][0].upper() if session['nombre_usuario'] else 'I' }}</span>
+                </div>
+                <div class="user-info">
+                    <h3>{{ session['nombre_usuario'] if session['nombre_usuario'] else 'Invitado' }}</h3>
+                    <p>{{ session['tipo_usuario'] if 'tipo_usuario' in session else 'Sin acceso' }}</p>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="nav-item active">
+                        <a href="{{ url_for('index') }}">
+                            <i class="fas fa-home"></i>
+                            <span>Inicio</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('nueva_factura') }}">
+                            <i class="fas fa-file-invoice"></i>
+                            <span>Facturas</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('nueva_retiro') }}">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <span>Retiros</span>
+                        </a>
+                    </li>
+                    {% if session['tipo_usuario'] in ['Administrator', 'Developer'] %}
+                    <li class="nav-item">
+                        <a href="#" onclick="openRegisterModal(); return false;">
+                            <i class="fas fa-user-plus"></i>
+                            <span>Nuevo Usuario</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            
+            {% if 'usuario_id' in session %}
+            <div class="sidebar-footer">
+                <a href="{{ url_for('logout') }}" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Cerrar Sesión</span>
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Contenido principal -->
+        <main class="main-content">
+            <header class="content-header">
+                <h1>Panel de Control</h1>
+                <div class="header-actions">
+                    <div class="date-display">
+                        <i class="far fa-calendar-alt"></i>
+                        <span id="current-date"></span>
+                    </div>
+                    <div class="mobile-header-controls">
+                        <button id="mobile-menu-toggle" class="mobile-menu-toggle">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        {% if 'usuario_id' in session %}
+                        <a href="{{ url_for('logout') }}" class="mobile-logout">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </header>
+
+            <div class="content-body">
+                <div class="welcome-card">
+                    <div class="welcome-text">
+                        <h2>¡Bienvenido, {{ session['nombre_usuario'] if session['nombre_usuario'] else 'Invitado' }}!</h2>
+                        <p>¿Qué quieres hacer hoy?</p>
+                    </div>
+                    <div class="welcome-icon">
+                        <i class="fas fa-chart-pie"></i>
+                    </div>
+                </div>
+
+                <div class="dashboard-cards">
+                    <a href="{{ url_for('nueva_factura') }}" class="card">
+                        <div class="card-icon blue">
+                            <i class="fas fa-file-invoice"></i>
+                        </div>
+                        <div class="card-info">
+                            <h3>Facturas</h3>
+                            <p>Gestionar facturas</p>
+                        </div>
+                        <div class="card-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </a>
+                    
+                    <a href="{{ url_for('nueva_retiro') }}" class="card">
+                        <div class="card-icon green">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div class="card-info">
+                            <h3>Retiros</h3>
+                            <p>Gestionar retiros</p>
+                        </div>
+                        <div class="card-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </a>
+                    
+                    {% if session['tipo_usuario'] in ['Administrator', 'Developer'] %}
+                    <a href="#" onclick="openRegisterModal(); return false;" class="card">
+                        <div class="card-icon purple">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <div class="card-info">
+                            <h3>Usuarios</h3>
+                            <p>Registrar usuarios</p>
+                        </div>
+                        <div class="card-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </main>
+        
+        <!-- Navegación móvil fija en la parte inferior -->
+        <nav class="mobile-nav">
+            <a href="{{ url_for('index') }}" class="mobile-nav-item active">
+                <i class="fas fa-home"></i>
+                <span>Inicio</span>
+            </a>
+            <a href="{{ url_for('nueva_factura') }}" class="mobile-nav-item">
+                <i class="fas fa-file-invoice"></i>
+                <span>Facturas</span>
+            </a>
+            <a href="{{ url_for('nueva_retiro') }}" class="mobile-nav-item">
+                <i class="fas fa-money-bill-wave"></i>
+                <span>Retiros</span>
+            </a>
+            {% if session['tipo_usuario'] in ['Administrator', 'Developer'] %}
+            <a href="#" onclick="openRegisterModal(); return false;" class="mobile-nav-item">
+                <i class="fas fa-user-plus"></i>
+                <span>Usuarios</span>
+            </a>
+            {% endif %}
+        </nav>
+    </div>
+
+    <!-- Modal de Login -->
+    {% if 'usuario_id' not in session %}
+    <div id="loginModal" class="modal">
+        <div class="modal-content login-container">
+            <div class="modal-header">
+                <div class="modal-logo">
+                    <i class="fas fa-chart-line"></i>
+                    <h2>AliGestor </h2>
+                </div>
+            </div>
+            <form action="{{ url_for('login') }}" method="POST">
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="error-message">
+                            <i class="fas fa-exclamation-circle"></i>
+                            {{ messages[0] }}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+                <div class="modal-form-group">
+                    <label for="nombre_usuario">
+                        <i class="fas fa-user"></i>
+                        Nombre de Usuario
+                    </label>
+                    <input type="text" id="nombre_usuario" name="nombre_usuario" placeholder="usuario@gmail.com" required>
+                </div>
+                <div class="modal-form-group">
+                    <label for="contrasena">
+                        <i class="fas fa-lock"></i>
+                        Contraseña
+                    </label>
+                    <div class="password-field">
+                        <input type="password" id="contrasena" name="contrasena" placeholder="••••" required>
+                        <button type="button" class="toggle-password" onclick="togglePasswordVisibility()">
+                            <i class="fas fa-eye" id="password-toggle-icon"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="btn-login">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Iniciar Sesión
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Modal de Registro de Nuevo Usuario -->
+    <div id="registerModal" class="modal" style="display: none;">
+        <div class="modal-content login-container">
+            <div class="modal-header">
+                <div class="modal-logo">
+                    <i class="fas fa-user-plus"></i>
+                    <h2>Registrar Usuario</h2>
+                </div>
+                <button type="button" class="close-modal" onclick="closeRegisterModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form action="{{ url_for('registrar_usuario') }}" method="POST">
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="error-message">
+                            <i class="fas fa-exclamation-circle"></i>
+                            {{ messages[0] }}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+                <div class="modal-form-group">
+                    <label for="id_usuario">
+                        <i class="fas fa-id-card"></i>
+                        ID
+                    </label>
+                    <input type="text" id="id_usuario" name="id_usuario" placeholder="ID generado automáticamente" disabled>
+                </div>
+                <div class="modal-form-group">
+                    <label for="nombre_usuario_registro">
+                        <i class="fas fa-at"></i>
+                        Nombre de Usuario
+                    </label>
+                    <input type="text" id="nombre_usuario_registro" name="nombre_usuario" placeholder="usuario@gmail.com" required>
+                </div>
+                <div class="modal-form-group">
+                    <label for="contrasena_registro">
+                        <i class="fas fa-lock"></i>
+                        Contraseña
+                    </label>
+                    <div class="password-field">
+                        <input type="password" id="contrasena_registro" name="contrasena" placeholder="••••" required>
+                        <button type="button" class="toggle-password" onclick="togglePasswordVisibility('contrasena_registro')">
+                            <i class="fas fa-eye" id="password-toggle-icon-registro"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-form-group">
+                    <label for="nombre_completo">
+                        <i class="fas fa-user"></i>
+                        Nombre Completo
+                    </label>
+                    <input type="text" id="nombre_completo" name="nombre_completo" placeholder="Nombre Completo" required>
+                </div>
+                <div class="modal-form-group">
+                    <label for="tipo_usuario">
+                        <i class="fas fa-user-tag"></i>
+                        Tipo de Usuario
+                    </label>
+                    <select id="tipo_usuario" name="tipo_usuario" required>
+                        <option value="Regular">Usuario Regular</option>
+                        <option value="Administrator">Administrador</option>
+                        <option value="Developer">Developer</option>
+                    </select>
+                </div>
+                <div class="modal-button-group">
+                    <button type="submit" class="btn-login">
+                        <i class="fas fa-save"></i>
+                        Registrar
+                    </button>
+                    <button type="button" class="btn-cancel" onclick="closeRegisterModal()">
+                        <i class="fas fa-times"></i>
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Mostrar fecha actual
+            const today = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('current-date').textContent = today.toLocaleDateString('es-ES', options);
+            
+            // Mostrar modal de login si no hay sesión
+            const loginModal = document.getElementById('loginModal');
+            if (loginModal) {
+                const loginModalContent = loginModal.querySelector('.modal-content');
+                loginModal.style.display = 'flex';
+                setTimeout(() => loginModalContent.classList.add('show'), 10);
+            }
+
+            // Toggle sidebar en móviles
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+            const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+            const appContainer = document.querySelector('.app-container');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+            
+            function toggleSidebar() {
+                appContainer.classList.toggle('sidebar-open');
+            }
+            
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', toggleSidebar);
+            }
+            
+            if (mobileMenuToggle) {
+                mobileMenuToggle.addEventListener('click', toggleSidebar);
+            }
+            
+            if (sidebarOverlay) {
+                sidebarOverlay.addEventListener('click', toggleSidebar);
+            }
+            
+            // Mostrar notificación de éxito si hay un mensaje flash de éxito
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% if messages[0] == 'Usuario registrado exitosamente.' %}
+                        const successNotification = document.getElementById('successNotification');
+                        successNotification.style.display = 'block';
+                        setTimeout(() => {
+                            successNotification.style.opacity = '0';
+                            setTimeout(() => {
+                                successNotification.style.display = 'none';
+                                successNotification.style.opacity = '1';
+                            }, 300);
+                        }, 3000);
+                    {% endif %}
+                {% endif %}
+            {% endwith %}
+        });
+
+        function openRegisterModal() {
+            const modal = document.getElementById('registerModal');
+            const modalContent = modal.querySelector('.modal-content');
+            modal.style.display = 'flex';
+            setTimeout(() => modalContent.classList.add('show'), 10);
+        }
+
+        function closeRegisterModal() {
+            const modal = document.getElementById('registerModal');
+            const modalContent = modal.querySelector('.modal-content');
+            modalContent.classList.remove('show');
+            setTimeout(() => modal.style.display = 'none', 300);
+        }
+        
+        function togglePasswordVisibility(fieldId = 'contrasena') {
+            const passwordField = document.getElementById(fieldId);
+            const icon = document.getElementById(fieldId === 'contrasena' ? 'password-toggle-icon' : 'password-toggle-icon-registro');
+            
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                passwordField.type = 'password';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        }
+        
+        function showSuccessNotification(message) {
+            const notification = document.getElementById('successNotification');
+            if (message) {
+                notification.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+            }
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                    notification.style.opacity = '1';
+                }, 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

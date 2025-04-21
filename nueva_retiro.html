@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuevo Retiro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/form_factura.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Registro de Retiro</h1>
+        
+        <form action="{{ url_for('nueva_retiro') }}" method="POST" enctype="multipart/form-data">
+            <div class="image-preview-container">
+                {% if form_saved_file %}
+                <img src="{{ url_for('static', filename='uploads/' + form_saved_file) }}" 
+                     id="imagePreview" 
+                     class="image-preview">
+                {% else %}
+                <div id="imagePreview" class="image-preview-placeholder">
+                    <span>Vista previa de la imagen</span>
+                </div>
+                {% endif %}
+                <div id="loadingSpinner" class="loading-spinner" style="display: none;">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+
+            <!-- Foto Retiro -->
+            <div class="form-group">
+                <label for="foto_retiro">Foto del Retiro</label>
+                <div style="margin-bottom: 15px; display: flex; gap: 10px;">
+                    <button 
+                        type="button"
+                        class="custom-button take-photo"
+                        onclick="document.getElementById('fileCamera').click()"
+                    >
+                        Tomar foto
+                    </button>
+                    <button 
+                        type="button"
+                        class="custom-button select-gallery"
+                        onclick="document.getElementById('fileGallery').click()"
+                    >
+                        Seleccionar de galería
+                    </button>
+                </div>
+                <input 
+                    type="file"
+                    id="fileCamera"
+                    name="foto_retiro_camera"
+                    accept="image/*"
+                    capture="camera"
+                    style="display: none;"
+                >
+                <input 
+                    type="file"
+                    id="fileGallery"
+                    name="foto_retiro_gallery"
+                    accept="image/*"
+                    style="display: none;"
+                >
+            </div>
+
+            <input type="hidden" name="saved_file" value="{{ form_saved_file }}">
+
+            <!-- Botón para cargar datos (OCR) -->
+            <center>
+            <button 
+                type="submit"
+                name="action"
+                value="cargar"
+                class="custom-button load-data"
+            >
+                Cargar datos
+            </button>
+            </center>
+
+            <!-- Tarjeta Titular -->
+            <div class="form-group">
+                <label for="tarjeta_titular">Tarjeta de Crédito Titular</label>
+                <select id="tarjeta_titular" name="tarjeta_titular">
+                    <option value="">-- Seleccione Tarjeta --</option>
+                    {% for tar in tarjetas %}
+                    <option 
+                        value="{{ tar.id }}"
+                        {% if form_tarjeta_titular and tar.id == form_tarjeta_titular|int %}selected{% endif %}
+                    >
+                        {{ tar.nombre }} ({{ tar.terminacion }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Tarjeta Adicional -->
+            <div class="form-group">
+                <label for="tarjeta_adicional">Tarjeta de Crédito Adicional</label>
+                <select id="tarjeta_adicional" name="tarjeta_adicional">
+                    <option value="">-- Seleccione Tarjeta Adicional --</option>
+                    {% for tar in tarjetas_adic %}
+                    <option 
+                        value="{{ tar.id }}"
+                        {% if form_tarjeta_adicional and tar.id == form_tarjeta_adicional|int %}selected{% endif %}
+                    >
+                        {{ tar.nombre }} ({{ tar.terminacion }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- País -->
+            <div class="form-group">
+                <label for="pais">País</label>
+                <select id="pais" name="pais">
+                    <option value="">-- Seleccione País --</option>
+                    {% for pais in paises %}
+                    <option 
+                        value="{{ pais.id }}"
+                        {% if form_pais and pais.id == form_pais|int %}selected{% endif %}
+                    >
+                        {{ pais.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Ciudad -->
+            <div class="form-group">
+                <label for="ciudad">Ciudad</label>
+                <select id="ciudad" name="ciudad">
+                    <option value="">-- Seleccione Ciudad --</option>
+                    {% for ciudad in ciudades %}
+                    <option 
+                        value="{{ ciudad.id }}"
+                        data-pais="{{ ciudad.id_pais }}"
+                        {% if form_ciudad and ciudad.id == form_ciudad|int %}selected{% endif %}
+                    >
+                        {{ ciudad.nombre }} ({{ ciudad.nombre_pais }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Moneda -->
+            <div class="form-group">
+                <label for="moneda">Moneda</label>
+                <select id="moneda" name="moneda">
+                    <option value="Lempiras" {% if form_moneda == "Lempiras" %}selected{% endif %}>Lempiras</option>
+                    <option value="USD" {% if form_moneda == "USD" %}selected{% endif %}>Dólares</option>
+                    <option value="EUR" {% if form_moneda == "EUR" %}selected{% endif %}>Euros</option>
+                </select>
+            </div>
+
+            <!-- Especifique Retiro -->
+            <div class="form-group">
+                <label for="especifique_retiro">Especifique donde realizó el retiro</label>
+                <select id="especifique_retiro" name="especifique_retiro">
+                    <option value="cajero_automatico" {% if form_especifique_retiro == "cajero_automatico" %}selected{% endif %}>Cajero Automático</option>
+                    <option value="agencia" {% if form_especifique_retiro == "agencia" %}selected{% endif %}>Agencia</option>
+                </select>
+            </div>
+
+            <!-- Cajero Automático -->
+            <div class="form-group">
+                <label for="cajero_automatico">Cajero Automático</label>
+                <input
+                    type="text"
+                    id="cajero_automatico"
+                    name="cajero_automatico"
+                    value="{{ form_cajero_automatico|default('') }}"
+                    placeholder="Ej: BP CAJERO AUTOMATICO"
+                    readonly
+                >
+            </div>
+
+            <!-- Fecha y Hora -->
+            <div class="form-group">
+                <label for="fecha_hora">Fecha y Hora</label>
+                <input 
+                    type="datetime-local"
+                    id="fecha_hora"
+                    name="fecha_hora"
+                    value="{{ form_fecha_hora }}"
+                >
+            </div>
+
+            <!-- Comentarios -->
+            <div class="form-group">
+                <label for="comentarios">Comentarios sobre el retiro</label>
+                <textarea
+                    id="comentarios"
+                    name="comentarios"
+                    rows="3"
+                    placeholder="Ingrese comentarios..."
+                >{{ form_comentarios }}</textarea>
+            </div>
+
+            <!-- Monto Retirado -->
+            <div class="form-group">
+                <label for="monto_retirado">Monto Retirado</label>
+                <input
+                    type="number"
+                    step="0.01"
+                    id="monto_retirado"
+                    name="monto_retirado"
+                    placeholder="Ej: 100.00"
+                    value="{{ form_monto_retirado }}"
+                >
+            </div>
+
+            <!-- Total Comisión -->
+            <div class="form-group">
+                <label for="total_comision">Total Comisión</label>
+                <input
+                    type="text"
+                    id="total_comision"
+                    name="total_comision"
+                    value="{{ form_total_comision }}"
+                    readonly
+                >
+            </div>
+
+            <!-- Total a Pagar -->
+            <div class="form-group">
+                <label for="total_pagar">Total a Pagar</label>
+                <input
+                    type="text"
+                    id="total_pagar"
+                    name="total_pagar"
+                    value="{{ form_total_pagar }}"
+                    readonly
+                >
+            </div>
+
+            <!-- Botón para Enviar -->
+            <button type="submit" name="action" value="enviar" class="btn-submit">Enviar</button>
+        </form>
+    </div>
+
+    <script>
+        // Manejar la selección de archivos y mostrar vista previa
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            const previewContainer = document.querySelector('.image-preview-container');
+            let preview = document.getElementById('imagePreview');
+            const spinner = document.getElementById('loadingSpinner');
+
+            if (file) {
+                spinner.style.display = 'block';
+                
+                if (!preview || preview.tagName === 'DIV') {
+                    preview = document.createElement('img');
+                    preview.id = 'imagePreview';
+                    preview.className = 'image-preview';
+                    previewContainer.insertBefore(preview, spinner);
+                    if (previewContainer.querySelector('.image-preview-placeholder')) {
+                        previewContainer.removeChild(previewContainer.querySelector('.image-preview-placeholder'));
+                    }
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    spinner.style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Vista previa de imagen
+            document.getElementById('fileCamera').addEventListener('change', handleFileSelect);
+            document.getElementById('fileGallery').addEventListener('change', handleFileSelect);
+
+            // Actualizar tarjetas adicionales cuando se seleccione una tarjeta titular
+            const tarjetaTitularSelect = document.getElementById('tarjeta_titular');
+            const tarjetaAdicionalSelect = document.getElementById('tarjeta_adicional');
+            tarjetaTitularSelect.addEventListener('change', () => {
+                const idTcTitular = tarjetaTitularSelect.value;
+                fetch('/get_additional_cards', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id_tc_titular: idTcTitular })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    tarjetaAdicionalSelect.innerHTML = '<option value="">-- Seleccione Tarjeta Adicional --</option>';
+                    data.forEach(tarjeta => {
+                        const option = document.createElement('option');
+                        option.value = tarjeta.id;
+                        option.textContent = `${tarjeta.nombre} (${tarjeta.terminacion})`;
+                        tarjetaAdicionalSelect.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error al cargar tarjetas adicionales:', error));
+            });
+
+            // Filtrar ciudades según el país seleccionado
+            const paisSelect = document.getElementById('pais');
+            const ciudadSelect = document.getElementById('ciudad');
+            paisSelect.addEventListener('change', () => {
+                const idPais = paisSelect.value;
+                ciudadSelect.innerHTML = '<option value="">-- Seleccione Ciudad --</option>';
+                const opciones = Array.from(ciudadSelect.querySelectorAll('option[data-pais]'));
+                opciones.forEach(opcion => {
+                    if (!idPais || opcion.getAttribute('data-pais') === idPais) {
+                        ciudadSelect.appendChild(opcion.cloneNode(true));
+                    }
+                });
+            });
+
+            // Disparar evento inicial para filtrar ciudades
+            paisSelect.dispatchEvent(new Event('change'));
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+/* Estilo para el toast de notificación */
+.success-toast-container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10001; /* Asegurar que esté por encima de las pestañas */
+  opacity: 0;
+  transition: opacity 0.3s ease; /* Reducir de 0.5s a 0.3s */
+}
+
+#successToast.show {
+  opacity: 1;
+}
+
+.succsess-alert {
+  cursor: default;
+  max-width: 350px; /* Ajustar el ancho del toast */
+  width: 100%;
+  background: linear-gradient(145deg, #2a2e3a, #1f232b); /* Gradiente oscuro */
+  border-radius: 16px; /* Bordes más redondeados */
+  padding: 12px 16px; /* Más espacio interno */
+  display: flex;
+  align-items: center;
+  gap: 12px; /* Más espacio entre el ícono y el texto */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4); /* Sombra más pronunciada */
+}
+
+.succsess-alert .text-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px; /* Más espacio entre las líneas de texto */
+}
+
+.succsess-alert .text-container p:first-child {
+  color: #ffffff;
+  font-size: 1rem; /* Tamaño un poco más grande */
+  font-weight: 700; /* Más negrita */
+}
+
+.succsess-alert .text-container p:last-child {
+  color: #b0b7c0; /* Gris más claro para mejor contraste */
+  font-size: 0.85rem; /* Tamaño un poco más grande */
+}
+
+/* Estilo para el ícono y su contenedor */
+.succsess-alert .icon-container {
+  color: #2b9875; /* Verde para el ícono */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.succsess-alert .icon-container svg {
+  width: 28px; /* Ícono un poco más grande */
+  height: 28px;
+}
