@@ -87,6 +87,7 @@ body {
 }
 
 .container h1::after {
+    display: none;
     content: '';
     position: absolute;
     bottom: 0;
@@ -274,8 +275,14 @@ body {
     border-radius: var(--radius-md);
     background: var(--color-bg-light);
     box-shadow: var(--shadow-sm);
+    border-bottom: none !important;
     transition: box-shadow var(--transition-normal);
 }
+.form-group.card.ocr-upload {
+    border-bottom: none !important;
+    border: none !important; /* Esto elimina todos los bordes, por si acaso */
+}
+
 
 .form-group.card:hover {
     box-shadow: var(--shadow-md);
@@ -357,6 +364,13 @@ textarea.form-control {
     font-size: 0.85rem;
     color: var(--color-text-muted);
 }
+.tabs .tab-buttons {
+    border-bottom: none;
+  }
+  
+  .modal.open {
+    display: flex;
+}
 
 /* Pestañas */
 .tabs {
@@ -416,10 +430,19 @@ textarea.form-control {
 .tab-content {
     display: none;
     animation: fadeIn 0.4s ease;
+    border: none;
 }
 
 .tab-content.active {
     display: block;
+    border: none;
+}
+.table-container {
+    margin: 1.5rem 0 0 0; /* Elimina el margen inferior */
+}
+
+.btn-primary {
+    margin-top: 1rem; /* Añade un margen superior para separar del elemento anterior */
 }
 
 /* Vista previa de imagen */
@@ -598,7 +621,8 @@ textarea.form-control {
     background: linear-gradient(to right, rgba(67, 97, 238, 0.05), rgba(67, 97, 238, 0.1));
     padding: 1.25rem;
     border-radius: var(--radius-md);
-    margin: 1.5rem 0;
+    margin: 0.5rem 0; /* Reducimos el margen superior para evitar espacios */
+    border: none;
     border-left: 4px solid var(--color-primary);
 }
 
@@ -640,6 +664,28 @@ textarea.form-control {
     overflow-x: auto;
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-md);
+    border: none;
+}
+
+#accounts .table-container {
+    border: none !important;
+    box-shadow: none !important; /* Elimina sombras que podrían parecer bordes */
+}
+
+#accounts .data-table {
+    border: none !important;
+}
+
+#detalleCuentaForm .btn-primary {
+    border-top: none !important;
+    margin-top: 1rem;
+}
+
+#detalleCuentaForm::before,
+#detalleCuentaForm::after,
+.totals-section::before,
+.totals-section::after {
+    display: none !important;
 }
 
 .data-table {
@@ -648,8 +694,15 @@ textarea.form-control {
     border-spacing: 0;
     background: var(--color-bg-light);
     overflow: hidden;
+    border: none;
+}
+.data-table tbody tr {
+    border-bottom: none; /* Elimina el borde inferior de las filas */
 }
 
+.data-table td {
+    border-bottom: none; /* Elimina el borde inferior de las celdas */
+}
 .data-table thead {
     background: linear-gradient(90deg, var(--color-primary-dark), var(--color-primary));
     color: white;
@@ -667,19 +720,20 @@ textarea.form-control {
 
 .data-table tbody tr {
     transition: background-color var(--transition-fast);
-    border-bottom: 1px solid var(--color-border);
-}
+    border-bottom: none !important; /* Forzamos la eliminación del borde */}
 
 .data-table tbody tr:hover {
     background-color: rgba(67, 97, 238, 0.05);
+}
+#detalleCuentaForm.card {
+    border-bottom: none !important;
 }
 
 .data-table td {
     padding: 0.875rem 1rem;
     font-size: 0.95rem;
     color: var(--color-text-primary);
-    border-bottom: 1px solid var(--color-border);
-}
+    border-bottom: none !important; /* Forzamos la eliminación del borde */}
 
 .data-table tbody tr:last-child td {
     border-bottom: none;
@@ -1043,5 +1097,148 @@ textarea.form-control {
         left: 1rem;
         right: 1rem;
         max-width: none;
+    }
+}
+.modal-content {
+    max-width: 400px; /* Reducimos el tamaño para que sea más compacto */
+    width: 90%;
+    background: var(--color-bg-light);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-xl);
+    transform: translateY(20px);
+    opacity: 0;
+    transition: transform 0.4s ease, opacity 0.4s ease;
+    border: 1px solid var(--color-border);
+}
+
+.modal-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.modal-icon {
+    width: 40px;
+    height: 40px;
+    color: var(--color-danger);
+    margin-bottom: 0.5rem;
+}
+
+.modal-header h2 {
+    font-size: 1.4rem;
+    color: var(--color-text-primary);
+    font-weight: 700;
+    margin: 0;
+}
+
+.modal-body p {
+    font-size: 1rem;
+    color: var(--color-text-secondary);
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.modal-footer .btn-secondary,
+.modal-footer .btn-danger {
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    border-radius: var(--radius-md);
+    transition: all var(--transition-normal);
+}
+
+.modal-footer .btn-secondary:hover {
+    background: linear-gradient(145deg, #e2e8f0, #cbd5e1);
+}
+
+.modal-footer .btn-danger:hover {
+    background: linear-gradient(145deg, var(--color-danger-dark), #b91c1c);
+}
+
+.image-preview-modal .modal-content {
+    max-width: 90%;
+    width: 800px; /* Tamaño máximo para pantallas grandes */
+    padding: 1.5rem;
+    background: var(--color-bg-light);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    transform: translateY(20px);
+    opacity: 0;
+    transition: transform 0.4s ease, opacity 0.4s ease;
+}
+
+.image-preview-modal .modal-header {
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.image-preview-modal .modal-header h2 {
+    font-size: 1.4rem;
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+.image-preview-modal .modal-body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    max-height: 70vh; /* Limita la altura del cuerpo del modal */
+    overflow: auto; /* Permite desplazamiento si la imagen es muy grande */
+    background: transparent;
+    min-height: 300px; /* Asegura un tamaño mínimo para que la imagen sea visible */
+}
+
+.image-preview-modal .full-image {
+    max-width: 100%;
+    max-height: 60vh; /* Limita la altura de la imagen */
+    object-fit: contain; /* Mantiene las proporciones de la imagen */
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    transition: transform 0.3s ease;
+    filter: none; /* Asegura que no haya desenfoque */
+    -webkit-filter: none; /* Para navegadores WebKit */
+    image-rendering: auto; /* Mejora la calidad de renderizado */
+    display: block; /* Asegura que la imagen sea visible */
+}
+
+.image-preview-modal .full-image:hover {
+    transform: scale(1.02);
+}
+
+/* Responsividad */
+@media (max-width: 768px) {
+    .image-preview-modal .modal-content {
+        width: 95%;
+        padding: 1rem;
+    }
+
+    .image-preview-modal .modal-header h2 {
+        font-size: 1.2rem;
+    }
+
+    .image-preview-modal .full-image {
+        max-height: 50vh;
+    }
+}
+
+@media (max-width: 576px) {
+    .image-preview-modal .modal-content {
+        width: 98%;
+        padding: 0.75rem;
+    }
+
+    .image-preview-modal .modal-header h2 {
+        font-size: 1rem;
+    }
+
+    .image-preview-modal .full-image {
+        max-height: 40vh;
     }
 }
