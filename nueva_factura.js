@@ -197,21 +197,28 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleImagePreview(event) {
         const file = event.target.files[0];
         const ocrImagePreview = document.getElementById('ocrImagePreview');
-        const ocrPlaceholder = document.getElementById('ocrPlaceholder');
-
+        const ocrPlaceholder    = document.getElementById('ocrPlaceholder');
+      
         if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                ocrImagePreview.src = e.target.result;
-                ocrImagePreview.style.display = 'block'; // Muestra la imagen
-                ocrPlaceholder.style.display = 'none'; // Oculta el marcador
-            };
-            reader.readAsDataURL(file);
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            ocrImagePreview.src = e.target.result;
+            ocrImagePreview.style.display     = 'block';
+            ocrPlaceholder.style.display      = 'none';
+      
+            // ← aquí: cuando ya tengas la miniatura, le pones el click
+            ocrImagePreview.style.cursor = 'pointer';
+            ocrImagePreview.addEventListener('click', () => {
+              openImagePreviewModal(ocrImagePreview.src);
+            });
+          };
+          reader.readAsDataURL(file);
         } else {
-            ocrImagePreview.style.display = 'none'; // Oculta la imagen si no hay archivo
-            ocrPlaceholder.style.display = 'block'; // Muestra el marcador
+          ocrImagePreview.style.display = 'none';
+          ocrPlaceholder.style.display  = 'block';
         }
-    }
+      }
+      
 
     const btnCameraVoucher = document.getElementById('btnCameraVoucher');
     const btnGalleryVoucher = document.getElementById('btnGalleryVoucher');
@@ -263,19 +270,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Función para abrir el modal
     function openImagePreviewModal(imageSrc) {
-        if (imageSrc) {
-            fullImagePreview.src = imageSrc;
-            imagePreviewModal.classList.add('open');
-            document.body.classList.add('modal-open'); // Desactivar desplazamiento del body
-            imagePreviewModal.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        console.log('Intentando abrir modal con imageSrc:', imageSrc);
+        if (!imageSrc || typeof imageSrc !== 'string' || imageSrc.trim() === '') {
+            console.error('imageSrc está vacío o no es válido:', imageSrc);
+            showSuccessToast('Error: No se pudo cargar la imagen para la vista previa.', true);
+            return;
         }
-    }
-
-    // Función para cerrar el modal
+        // Limpia el src anterior para forzar una recarga
+        fullImagePreview.src = '';
+        fullImagePreview.src = imageSrc;
+        imagePreviewModal.classList.add('open');
+        const modalContent = imagePreviewModal.querySelector('.modal-content');
+        if (modalContent) {
+            modalContent.classList.add('show');
+        } else {
+            console.error('Contenido del modal de vista previa no encontrado');
+        }
+        document.body.classList.add('modal-open');
+        imagePreviewModal.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    
     function closeImagePreviewModal() {
+        const modalContent = imagePreviewModal.querySelector('.modal-content');
+        if (modalContent) {
+            modalContent.classList.remove('show'); // Remueve la clase .show
+        }
         imagePreviewModal.classList.remove('open');
-        fullImagePreview.src = ''; // Limpiar la imagen para evitar consumo de memoria
-        document.body.classList.remove('modal-open'); // Reactivar desplazamiento del body
+        fullImagePreview.src = '';
+        document.body.classList.remove('modal-open');
     }
 
     // Añadir eventos al modal (cerrar)
@@ -393,6 +415,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     // Añadir evento de clic al nuevo elemento img
                     preview.addEventListener('click', () => {
+                        console.log('Clic en la vista previa, src:', preview.src);
                         openImagePreviewModal(preview.src);
                     });
 
@@ -1090,39 +1113,61 @@ Promise.all([
     if (cuentasTable) {
         console.log('Adjuntando evento click a #cuentasTable');
         cuentasTable.addEventListener('click', async (e) => {
-            console.log('Clic detectado en #cuentasTable', e.target);
             e.preventDefault();
-            if (e.target.classList.contains('btn-modify')) {
-                console.log('Botón Modificar clicado, índice:', e.target.dataset.index);
-                const index = parseInt(e.target.dataset.index);
-                accounts = await fetchAccounts();
-                editingIndex = index;
-                const account = accounts[index];
-                originalData = { ...account };
-
-                cuentaInput.value = account.cuenta_nombre;
-                cuentaIdInput.value = account.id_cuenta;
-                centroCostoInput.value = account.centro_costo_nombre;
-                centroCostoIdInput.value = account.id_centro_costo;
-                totalInput.value = account.monto;
-                comentariosInput.value = account.comentarios || '';
-                actionButtons.style.display = 'none';
-                editButtons.style.display = 'block';
-                btnConfirmEdit.disabled = true;
+            const button = e.target.closest('button'); // Busca el botón más cercano
+            if (!button) return; // Si no se encuentra un botón, salir
+    
+            const index = parseInt(button.dataset.index);
+            const idCompraCuenta = button.dataset.idCompraCuenta;
+    
+            console.log('Botón clicado:', button.className, 'Índice:', index, 'ID Compra Cuenta:', idCompraCuenta);
+    
+            if (button.classList.contains('btn-modify')) {
+                console.log('Botón Modificar clicado, índice:', index);
+                try {
+                    accounts = await fetchAccounts();
+                    console.log('Cuentas obtenidas para modificar:', accounts);
+                    if (!accounts[index]) {
+                        throw new Error(`No se encontró la cuenta con índice ${index}`);
+                    }
+                    editingIndex = index;
+                    const account = accounts[index];
+                    originalData = { ...account };
+    
+                    cuentaInput.value = account.cuenta_nombre;
+                    cuentaIdInput.value = account.id_cuenta;
+                    centroCostoInput.value = account.centro_costo_nombre;
+                    centroCostoIdInput.value = account.id_centro_costo;
+                    totalInput.value = account.monto;
+                    comentariosInput.value = account.comentarios || '';
+                    actionButtons.style.display = 'none';
+                    editButtons.style.display = 'block';
+                    btnConfirmEdit.disabled = true;
+                } catch (error) {
+                    console.error('Error al intentar modificar cuenta:', error);
+                    showSuccessToast('Error al cargar datos para modificar: ' + error.message, true);
+                }
             }
-            if (e.target.classList.contains('btn-delete')) {
-                console.log('Botón Eliminar clicado, índice:', e.target.dataset.index);
-                const index = parseInt(e.target.dataset.index);
-                const idCompraCuenta = e.target.dataset.idCompraCuenta;
+    
+            if (button.classList.contains('btn-delete')) {
+                console.log('Botón Eliminar clicado, índice:', index);
+                if (!deleteModal) {
+                    console.error('Modal de eliminación no encontrado');
+                    return;
+                }
                 deleteModal.style.display = 'flex';
+                const modalContent = deleteModal.querySelector('.modal-content');
+                if (modalContent) {
+                    modalContent.classList.add('show'); // Agrega la clase .show
+                } else {
+                    console.error('Contenido del modal de eliminación no encontrado');
+                }
                 btnConfirmDelete.dataset.index = index;
                 btnConfirmDelete.dataset.idCompraCuenta = idCompraCuenta;
-            }
-        });
+            }        });
     } else {
         console.error('No se encontró #cuentasTable en el DOM');
     }
-
     if (btnDiscard) btnDiscard.addEventListener('click', clearForm);
 
     if (btnConfirmEdit) {
@@ -1252,6 +1297,8 @@ Promise.all([
             }
         }, 100);
     }
+
+    
 
 /* ==================== 9. VALIDACIÓN DEL FORMULARIO AL ENVIAR ==================== */
 if (form) {
